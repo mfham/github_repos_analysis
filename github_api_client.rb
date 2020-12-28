@@ -6,7 +6,7 @@ require 'json'
 class GitHubApiClient
   URL = 'https://api.github.com'.freeze
 
-  # Faradayインスタンスを取得する
+  # Faraday::Connectionインスタンスを取得する
   #
   # @return [Faraday::Connection] Faraday::Connectionインスタンス
   def conn
