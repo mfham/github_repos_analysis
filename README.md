@@ -28,3 +28,10 @@ $ mv .env_sample .env
 $ emacs .env
 $ bundle exec ruby analyze.rb
 ```
+
+## メモ
+
+値を見る限り、例えば[組織githubのリポジトリの中で主要言語がGo言語である一覧](https://github.com/github?q=&type=&language=go)は、
+https://api.github.com/repos/github/{repo}/languages の結果を集計したものではなく、
+https://api.github.com/repos/github/{repo} の result["language"]でもなく、
+https://api.github.com/repos/github/{repo} の result["source"]["language"]もしくはresult["parent"]["language"]が利用されていそうである。

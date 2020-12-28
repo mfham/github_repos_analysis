@@ -44,11 +44,20 @@ class GitHubApiClient
   # 組織のリポジトリ情報を取得する
   #
   # @param  [String]  org   組織名
-  # @param  [Integer] limit 取得する件数
   # @return [Hash]    組織のリポジトリ情報
-  def repositories_by_organization(org, limit = 500)
+  def repositories_by_organization(org)
+    repositories = []
+
+    # 念のため10ページ分に抑える
+    (1..10).each do |page|
+      repos = JSON.parse(conn.get("orgs/#{org}/repos", { per_page: 100, page: page }).body)
+      break if repos.empty?
+
+      repositories += repos
+    end
+
     # 例: [{"id"=>1, ..., "language": "Ruby"}, ..., {"id"=>333, ..., "language": nil}]
-    JSON.parse(conn.get("orgs/#{org}/repos", { per_page: limit }).body)
+    repositories
   end
 
   # 組織のリポジトリ主翼言語総数を取得する
@@ -56,9 +65,9 @@ class GitHubApiClient
   # @param  [String]  org   組織名
   # @param  [Integer] limit 取得する件数
   # @return [Hash]    組織のリポジトリ主翼言語総数
-  def main_languages_by_organization(org, limit = 500)
+  def main_languages_by_organization(org)
     # 例: {"Ruby"=>52, "JavaScript"=>6, "CSS"=>5}
-    repositories_by_organization(org, limit)
+    repositories_by_organization(org)
       .map { |repos| main_language(repos) }
       .reject(&:nil?)
       .group_by(&:itself)
@@ -68,11 +77,10 @@ class GitHubApiClient
   # 組織のリポジトリ言語比率を取得する
   #
   # @param  [String]  org   組織名
-  # @param  [Integer] limit 取得する件数
   # @return [Hash]    組織のポジトリ言語比率
-  def languages_percentages_by_organization(org, limit = 500)
+  def languages_percentages_by_organization(org)
     # 例: [{"Ruby"=>1.0}, {"CSS"=>0.76, "HTML"=>0.14, "JavaScript"=>0.08, "Ruby"=>0.01, "Shell"=>0.0}, {"Ruby"=>1.0}]
-    langs_ratios = repositories_by_organization(org, limit)
+    langs_ratios = repositories_by_organization(org)
       .map { |repos| languages_percentages(repos) }
       .reject(&:empty?)
 
