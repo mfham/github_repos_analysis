@@ -24,7 +24,7 @@ $ bundle config set --local path 'vendor/bundle'
 $ bundle config set --local jobs 4
 $ bundle install
 
-$ mv env_sample .env
+$ mv .env_sample .env
 $ emacs .env
 $ bundle exec ruby analyze.rb
 ```
