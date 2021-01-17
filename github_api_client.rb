@@ -29,6 +29,15 @@ class GitHubApiClient
     repos_info['language']
   end
 
+  # リポジトリ名を取得する
+  #
+  # @param  [Hash] repos_info リポジトリ情報
+  # @return [String] リポジトリ名
+  def repository_name(repos_info)
+    # 例: 'Ruby'
+    repos_info['name']
+  end
+
   # リポジトリ言語比率を取得する
   #
   # @param  [Hash] repos_info リポジトリ情報
@@ -39,6 +48,14 @@ class GitHubApiClient
 
     # 例: {'Ruby'=>0.76, 'HTML'=>0.18, 'JavaScript'=>0.06}
     langs.transform_values { |v| (v.to_f / bytes_sum).round(2) }
+  end
+
+  # contributor名を取得する
+  #
+  # @param  [Hash] contributor_info contributor情報
+  # @return [String] contributor名
+  def contributor_name(contributor_info)
+    contributor_info['login']
   end
 
   # 組織のリポジトリ情報を取得する
@@ -94,5 +111,48 @@ class GitHubApiClient
 
     # 例: {"Ruby"=>67.0, "CSS"=>25.33, "HTML"=>4.67, "JavaScript"=>2.67, "Shell"=>0.0}
     sum.transform_values { |v| ((v * 100) / cnt).round(2) }
+  end
+  
+  # リポジトリ主要言語ごとのcontributor情報を取得する
+  #
+  # @param  [String]  org   組織名
+  # @return [Hash]    リポジトリ主要言語ごとのcontributor情報
+  def contributors_per_main_languages(org)
+    tally = {}
+
+    # [{"PHP": [a,b,c]}, {"Ruby": [x,y]}, ..., {"PHP": [a,x]}]
+    lang_contributors = repositories_by_organization(org).map do |repos|
+      { main_language(repos) => repositoriy_contributors(org, repository_name(repos)).map { |c| contributor_name(c) } }
+    end
+
+    # 言語ごとに集計
+    lang_contributors.each do |v|
+      v.each do |lang, names|
+        tally[lang] = [] unless tally.key?(lang)
+        tally[lang] |= names # 重複なし
+      end
+    end
+
+    tally
+  end
+
+  # 指定したリポジトリのcontributor情報を取得する
+  #
+  # @param  [String]  org 組織名
+  # @param  [String]  repository_name リポジトリ名
+  # @return [Hash]    指定したリポジトリのcontributor情報
+  def repositoriy_contributors(org, repository_name)
+    contributors = []
+
+    # 念のため3ページ分に抑える
+    (1..3).each do |page|
+      contoributor = JSON.parse(conn.get("repos/#{org}/#{repository_name}/contributors", { per_page: 100, page: page }).body)
+      break if contoributor.empty?
+
+      contributors += contoributor
+    end
+
+    # 例: [{"id"=>1, ..., "language": "Ruby"}, ..., {"id"=>333, ..., "language": nil}]
+    contributors
   end
 end
