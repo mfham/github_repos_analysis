@@ -146,10 +146,13 @@ class GitHubApiClient
 
     # 念のため3ページ分に抑える
     (1..3).each do |page|
-      contoributor = JSON.parse(conn.get("repos/#{org}/#{repository_name}/contributors", { per_page: 100, page: page }).body)
-      break if contoributor.empty?
+      response = conn.get("repos/#{org}/#{repository_name}/contributors", { per_page: 100, page: page }).body
+      break if response.empty? # 作成して未コミットのリポジトリに対して呼び出すと結果が空文字になる
 
-      contributors += contoributor
+      contributor = JSON.parse(response)
+      break if contributor.empty?
+
+      contributors += contributor
     end
 
     # 例: [{"id"=>1, ..., "language": "Ruby"}, ..., {"id"=>333, ..., "language": nil}]
